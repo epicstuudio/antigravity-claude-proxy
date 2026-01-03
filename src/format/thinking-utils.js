@@ -418,7 +418,9 @@ export function needsThinkingRecovery(messages) {
  * @returns {Array<Object>} Messages with invalid thinking blocks removed
  */
 function stripInvalidThinkingBlocks(messages, targetFamily = null) {
-    return messages.map(msg => {
+    let strippedCount = 0;
+
+    const result = messages.map(msg => {
         const content = msg.content || msg.parts;
         if (!Array.isArray(content)) return msg;
 
@@ -427,7 +429,10 @@ function stripInvalidThinkingBlocks(messages, targetFamily = null) {
             if (!isThinkingPart(block)) return true;
 
             // Check generic validity (has signature of sufficient length)
-            if (!hasValidSignature(block)) return false;
+            if (!hasValidSignature(block)) {
+                strippedCount++;
+                return false;
+            }
 
             // Check family compatibility if targetFamily is provided
             if (targetFamily) {
@@ -437,6 +442,7 @@ function stripInvalidThinkingBlocks(messages, targetFamily = null) {
                 // Strict validation: If we don't know the family (cache miss) or it doesn't match,
                 // we drop it. We don't assume validity for unknown signatures.
                 if (signatureFamily !== targetFamily) {
+                    strippedCount++;
                     return false;
                 }
             }
@@ -451,6 +457,12 @@ function stripInvalidThinkingBlocks(messages, targetFamily = null) {
         }
         return msg;
     });
+
+    if (strippedCount > 0) {
+        logger.debug(`[ThinkingUtils] Stripped ${strippedCount} invalid/incompatible thinking block(s)`);
+    }
+
+    return result;
 }
 
 /**
