@@ -127,8 +127,9 @@ function createAuthMiddleware() {
 
         // Determine if this path should be protected
         const isApiRoute = req.path.startsWith('/api/');
-        const isException = req.path === '/api/auth/url' || req.path === '/api/config';
-        const isProtected = (isApiRoute && !isException) || req.path === '/account-limits' || req.path === '/health';
+        const isAuthUrl = req.path === '/api/auth/url';
+        const isConfigGet = req.path === '/api/config' && req.method === 'GET';
+        const isProtected = (isApiRoute && !isAuthUrl && !isConfigGet) || req.path === '/account-limits' || req.path === '/health';
 
         if (isProtected) {
             const providedPassword = req.headers['x-webui-password'] || req.query.password;
